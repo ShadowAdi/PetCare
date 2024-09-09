@@ -10,13 +10,15 @@ import React, { useEffect, useState } from "react";
 import { DB } from "../config/FirebaseConfig";
 import Colors from "../constants/Colors";
 import { collection, getDocs } from "firebase/firestore";
-export default function Category() {
+export default function Category({ categoryVar }) {
   const [category, setCategory] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("Dogs");
 
   useEffect(() => {
     getCategory();
   }, []);
+
+  
   const getCategory = async () => {
     setCategory([]);
     const snapshot = await getDocs(collection(DB, "Category"));
@@ -34,7 +36,10 @@ export default function Category() {
         renderItem={({ item, index }) => {
           return (
             <TouchableOpacity
-              onPress={() => setSelectedCategory(item.name)}
+              onPress={() => {
+                setSelectedCategory(item.Name);
+                categoryVar(item.Name);
+              }}
               key={index}
               style={{
                 flex: 1,
