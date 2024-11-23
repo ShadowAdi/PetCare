@@ -20,6 +20,7 @@ export default function UserPost() {
   const { user } = useUser();
   const [userPostList, setUserPostList] = useState([]);
   const [loader, setLoader] = useState(false);
+
   useEffect(() => {
     navigation.setOptions({ headerTitle: "User Post" });
     if (user) {
@@ -27,7 +28,7 @@ export default function UserPost() {
     }
   }, [user]);
 
-  const GetUserPost = async (q) => {
+  const GetUserPost = async () => {
     setLoader(true);
     const q = query(
       collection(DB, "Pets"),
@@ -36,8 +37,9 @@ export default function UserPost() {
 
     const querySnapshot = await getDocs(q);
 
+    setUserPostList([]); // Reset the list
     querySnapshot.forEach((doc) => {
-      setUserPostList((prev) => [...prev, doc.data()]);
+      setUserPostList((prev) => [...prev, { id: doc.id, ...doc.data() }]);
     });
     setLoader(false);
   };
@@ -54,7 +56,7 @@ export default function UserPost() {
       [
         {
           text: "Cancel",
-          onPress: () => console.log("Click"),
+          onPress: () => console.log("Cancel clicked"),
           style: "cancel",
         },
         {
@@ -67,18 +69,19 @@ export default function UserPost() {
 
   return (
     <View style={{ padding: 20 }}>
-      <Text style={{ fontWeight: 600, fontSize: 30 }}>UserPost</Text>
+      <Text style={{ fontWeight: "600", fontSize: 30 }}>UserPost</Text>
       <FlatList
         numColumns={2}
         data={userPostList}
         refreshing={loader}
         onRefresh={GetUserPost}
-        renderItem={({ item, index }) => {
+        renderItem={({ item }) => {
+          if (!item) return null; // Handle undefined item
           return (
-            <View key={index}>
+            <View>
               <PetListItem pet={item} />
               <Pressable
-                onPress={() => onDeletePost(item?.id)}
+                onPress={() => onDeletePost(item.id)}
                 style={styles.deleteButton}
               >
                 <Text style={{ fontSize: 18, textAlign: "center" }}>
@@ -89,11 +92,12 @@ export default function UserPost() {
           );
         }}
       />
+
       {userPostList.length === 0 && (
         <Text
           style={{
             fontSize: 20,
-            fontWeight: 600,
+            fontWeight: "600",
             color: Colors.GRAY,
             textAlign: "center",
           }}

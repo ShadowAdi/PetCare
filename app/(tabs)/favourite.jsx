@@ -1,5 +1,5 @@
 import { View, Text, FlatList } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import GetFavList from "../../Shared/Shared";
 import { useUser } from "@clerk/clerk-expo";
 import { collection, getDocs, query, where } from "firebase/firestore";
@@ -7,58 +7,73 @@ import { DB } from "../../config/FirebaseConfig";
 import PetListItem from "../../components/PetListItem";
 import Colors from "../../constants/Colors";
 
-export default async function Favourite() {
+export default function Favourite() {
   const { user } = useUser();
   const [favIds, setFavIds] = useState([]);
   const [favPetList, setFavPetList] = useState([]);
   const [loader, setLoader] = useState(false);
+
+  const GetFavPetIds = useCallback(async () => {
+    setLoader(true);
+    try {
+      const result = await GetFavList(user);
+      console.log(result);
+      setFavIds(result?.favourites || []);
+    } catch (error) {
+      console.error("Error fetching favourite IDs:", error);
+    } finally {
+      setLoader(false);
+    }
+  }, [user]);
+
+  const GetFavPetList = useCallback(async () => {
+    setLoader(true);
+    try {
+      if (favIds.length > 0) {
+        const q = query(collection(DB, "Pets"), where("id", "in", favIds));
+        const querySnapShot = await getDocs(q);
+
+        const petList = querySnapShot.docs.map((doc) => doc.data());
+        setFavPetList(petList);
+      } else {
+        setFavPetList([]);
+      }
+    } catch (error) {
+      console.error("Error fetching favourite pets:", error);
+    } finally {
+      setLoader(false);
+    }
+  }, [favIds]);
+
   useEffect(() => {
     if (user) {
       GetFavPetIds();
     }
-  }, [user]);
+  }, [user, GetFavPetIds]);
 
-  const GetFavPetIds = async () => {
-    setLoader(true)
-    const result = await GetFavList(user);
-    console.log(result);
-    setFavIds(result?.favourites);
-    setLoader(false)
-
-    GetFavPetList();
-  };
-
-  const GetFavPetList = async () => {
-    setLoader(true)
-    setFavPetList([]);
+  useEffect(() => {
     if (favIds.length > 0) {
-      const q = query(collection(DB, "Pets"), where("id", "in", favIds));
-      const querySnapShot = await getDocs(q);
-
-      querySnapShot.forEach((doc) => {
-        setFavPetList((prev) => [...prev, doc.data()]);
-      });
+      GetFavPetList();
     }
-    setLoader(false)
-
-  };
+  }, [favIds, GetFavPetList]);
 
   return (
     <View style={{ padding: 20, marginTop: 20 }}>
-      <Text style={{ fontSize: 30, fontWeight: 500 }}>Favourites</Text>
+      <Text style={{ fontSize: 30, fontWeight: "500" }}>Favourites</Text>
 
       {favPetList.length > 0 ? (
         <FlatList
-        onRefresh={GetFavPetIds}
-        refreshing={loader}
+          onRefresh={GetFavPetIds}
+          refreshing={loader}
           data={favPetList}
           numColumns={2}
-          renderItem={({ item, index }) => (
-            <View key={index}>
+          renderItem={({ item }) => (
+            <View>
               <PetListItem pet={item} />
             </View>
           )}
-        ></FlatList>
+          keyExtractor={(item, index) => item.id || index.toString()}
+        />
       ) : (
         <Text style={{ fontSize: 24, color: Colors.GRAY }}>
           No Pets In Favourite

@@ -19,7 +19,11 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.anonymous.adopter"
     },
     "web": {
       "bundler": "metro",
@@ -28,7 +32,6 @@
     },
     "plugins": [
       "expo-router",
-
       [
         "expo-image-picker",
         {

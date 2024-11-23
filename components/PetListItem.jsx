@@ -6,6 +6,8 @@ import MarkFavourite from "./MarkFavourite";
 
 const PetListItem = ({ pet }) => {
   const router = useRouter();
+  if (!pet) return null;
+
   return (
     <TouchableOpacity
       onPress={() =>
